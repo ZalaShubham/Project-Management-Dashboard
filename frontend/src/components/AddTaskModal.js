@@ -22,7 +22,7 @@ const AddTaskModal = ({ isAddTaskModalOpen, setAddTaskModal, projectId = null, t
                 })
             console.log('edit function call')
         }
-    }, [isAddTaskModalOpen]);
+    }, [edit, isAddTaskModalOpen, projectId, taskId]);
 
     const handleSubmit = (e) => {
         e.preventDefault()

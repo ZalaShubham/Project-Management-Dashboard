@@ -21,7 +21,7 @@ const AddProjectModal = ({ isModalOpen, closeModal, edit = false, id = null }) =
                     toast.error('Something went wrong')
                 })
         }
-    }, [isModalOpen]);
+    }, [edit, id, isModalOpen]);
 
 
     const handleSubmit = (e) => {
