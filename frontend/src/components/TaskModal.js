@@ -1,96 +1,174 @@
 import React, { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-// import Attachment from '../image/attachment.jpg'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-
-//first later capital in javascript ?
-
-
-
+const stageStyles = {
+  'Requested': {
+    badge: 'bg-slate-100 text-slate-700 border-slate-200',
+    dot: 'bg-slate-400',
+  },
+  'To do': {
+    badge: 'bg-sky-50 text-sky-700 border-sky-200',
+    dot: 'bg-sky-500',
+  },
+  'In Progress': {
+    badge: 'bg-amber-50 text-amber-700 border-amber-200',
+    dot: 'bg-amber-500',
+  },
+  'Done': {
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+}
 
 const TaskModal = ({ isOpen, setIsOpen, id }) => {
-    const [taskData, setTaskData] = useState('')
+  const [taskData, setTaskData] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-    const capitalizeFirstLetter = (string) => {
-        return string ? string.charAt(0).toUpperCase() + string.slice(1) : ''
+  useEffect(() => {
+    if (isOpen && id?.projectId && id?.id) {
+      setIsLoading(true)
+      axios.get(`http://localhost:9000/project/${id.projectId}/task/${id.id}`)
+        .then((data) => {
+          setTaskData(data.data[0]?.task[0] || null)
+        })
+        .catch(() => toast.error('Unable to load task details'))
+        .finally(() => setIsLoading(false))
+    } else {
+      setTaskData(null)
     }
+  }, [isOpen, id])
 
-    useEffect(() => {
-        if (isOpen) {
-            axios.get(`http://localhost:9000/project/${id.projectId}/task/${id.id}`)
-                .then((data) => {
-                    setTaskData({ ...data.data[0].task[0] });
-                    // console.log(taskData);
-                })
-                .catch((error) => {
-                    toast.error('something went wrong')
-                })
-        }
-    }, [isOpen, id]);
+  const stage = taskData?.stage || 'Requested'
+  const style = stageStyles[stage] || stageStyles['Requested']
 
-    return (
-        <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as='div' open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
-                <div className="fixed inset-0 overflow-y-auto">
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <div className="fixed inset-0 bg-black/30" />
-                    </Transition.Child>
-                    <div className="fixed inset-0 flex items-center justify-center p-4 w-screen h-screen">
-                        {/* <div className="fixed inset-0 "> */}
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0 scale-95"
-                            enterTo="opacity-100 scale-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100 scale-100"
-                            leaveTo="opacity-0 scale-95"
-                        >
-                            <Dialog.Panel className="rounded-md bg-white max-w-[85%] w-[85%] h-[85%] overflow-y-hidden">
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-150"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" />
+        </Transition.Child>
 
-                                <Dialog.Title as='div' className={'bg-white shadow px-6 py-4 rounded-t-md sticky top-0'}>
-                                    <h1>Task details</h1>
-                                    <button onClick={() => setIsOpen(false)} className='absolute right-6 top-4 text-gray-500 hover:bg-gray-100 rounded focus:outline-none focus:ring focus:ring-offset-1 focus:ring-gray-500/30 '>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                            <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </Dialog.Title>
-                                <div className='flex gap-4 h-[inherit]'>
-                                    <div className="!w-8/12 px-8 space-y-3 py-4 min-h-max  overflow-y-auto">
-                                        <h1 className='text-3xl font-semibold '>{capitalizeFirstLetter(taskData.title)}</h1>
-                                        <p className='text-gray-600'>{capitalizeFirstLetter(taskData.description)}</p>
-                                        {/* <p className='text-gray-600'>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Asperiores modi error, voluptatibus ullam odio nemo culpa optio incidunt, soluta sunt eos laboriosam labore animi dolorum voluptas officiis fugit perspiciatis laborum.</p> */}
-                                        {/* <div>
-                                            <h3 className='text-base text-gray-600 font-medium mt-3 mb-2'>Attachment</h3>
-                                            <div className="flex items-center">
-                                                <img className='aspect-video w-56 rounded' src={Attachment} alt="" />
-                                            </div>
-                                        </div> */}
-                                    </div>
-                                    <div className="w-4/12 py-4 pr-4">
-                                        {/* <div className='border h-full rounded-md'></div> */}
-                                    </div>
-                                </div>
-
-                            </Dialog.Panel>
-                        </Transition.Child>
-
-                    </div>
+        <div className="fixed inset-0 flex items-center justify-center p-4 md:p-6">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-150"
+            enterFrom="opacity-0 scale-95"
+            enterTo="opacity-100 scale-100"
+            leave="ease-in duration-100"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-95"
+          >
+            <Dialog.Panel className="bg-white rounded-xl shadow-modal border border-slate-200 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-medium text-slate-400">
+                    {taskData?.index ? `#${taskData.index}` : 'Task'}
+                  </span>
+                  <span className="text-slate-200">•</span>
+                  <Dialog.Title as="h2" className="text-sm font-semibold text-slate-800">
+                    Task Details
+                  </Dialog.Title>
                 </div>
-            </Dialog>
-        </Transition>
-    )
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors focus:outline-none"
+                  aria-label="Close dialog"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+                {/* Main Content */}
+                <div className="flex-1 px-6 py-5 overflow-y-auto">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-48 text-slate-400 text-xs">
+                      Loading task details...
+                    </div>
+                  ) : taskData ? (
+                    <div className="space-y-5">
+                      <div>
+                        <h1 className="text-xl font-semibold text-slate-900 leading-snug">
+                          {taskData.title}
+                        </h1>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                          Description
+                        </h3>
+                        {taskData.description && taskData.description.trim() ? (
+                          <div className="bg-slate-50/80 rounded-lg p-3.5 border border-slate-200/80">
+                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                              {taskData.description}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-50/50 rounded-lg p-3.5 border border-dashed border-slate-200">
+                            <p className="text-xs text-slate-400 italic">No description provided for this task.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-400 py-6 text-center">
+                      No task information available.
+                    </div>
+                  )}
+                </div>
+
+                {/* Sidebar Details */}
+                <div className="w-full md:w-56 border-t md:border-t-0 md:border-l border-slate-100 py-5 px-5 flex-shrink-0 bg-slate-50/40">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
+                    Properties
+                  </h3>
+                  <div className="space-y-3.5 text-xs">
+                    <div>
+                      <span className="text-slate-400 block mb-1">Status</span>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md border ${style.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                        {stage}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 block mb-1">Task ID</span>
+                      <span className="font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                        #{taskData?.index || '—'}
+                      </span>
+                    </div>
+
+                    {taskData?.created_at && (
+                      <div>
+                        <span className="text-slate-400 block mb-1">Created</span>
+                        <span className="text-slate-600 text-[11px]">
+                          {new Date(taskData.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
+  )
 }
 
 export default TaskModal

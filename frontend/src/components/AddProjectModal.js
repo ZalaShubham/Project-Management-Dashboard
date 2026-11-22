@@ -2,127 +2,170 @@ import React, { Fragment, memo, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import BtnPrimary from './BtnPrimary'
 import BtnSecondary from './BtnSecondary'
-import axios from "axios"
+import axios from 'axios'
 import toast from 'react-hot-toast'
 
 const AddProjectModal = ({ isModalOpen, closeModal, edit = false, id = null }) => {
+  const [title, setTitle] = useState('')
+  const [desc, setDesc] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const [title, setTitle] = useState('')
-    const [desc, setDesc] = useState('');
-
-    useEffect(() => {
-        if (edit && isModalOpen) {
-            axios.get(`http://localhost:9000/project/${id}`)
-                .then((res) => {
-                    setTitle(res.data[0].title)
-                    setDesc(res.data[0].description)
-                })
-                .catch((error) => {
-                    toast.error('Something went wrong')
-                })
-        }
-    }, [edit, id, isModalOpen]);
-
-
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        if (!edit) {
-            axios.post('http://localhost:9000/project/', { title, description: desc })
-                .then((res) => {
-                    closeModal()
-                    const customEvent = new CustomEvent('projectUpdate', { detail: { ...res.data } });
-                    document.dispatchEvent(customEvent);
-                    toast.success('Project created successfully')
-                    setTitle('')
-                    setDesc('')
-                })
-                .catch((error) => {
-                    if (error.response.status === 422) {
-                        toast.error(error.response.data.details[0].message)
-                    } else {
-                        toast.error('Something went wrong')
-                    }
-                })
-        } else {
-            axios.put(`http://localhost:9000/project/${id}`, { title, description: desc })
-                .then((res) => {
-                    closeModal()
-                    const customEvent = new CustomEvent('projectUpdate', { detail: { ...res.data } });
-                    document.dispatchEvent(customEvent);
-                    toast.success('Project updated successfully')
-                    setTitle('')
-                    setDesc('')
-                })
-                .catch((error) => {
-                    if (error.response.status === 422) {
-                        toast.error(error.response.data.details[0].message)
-                    } else {
-                        toast.error('Something went wrong')
-                    }
-                })
-        }
-
+  useEffect(() => {
+    if (edit && isModalOpen && id) {
+      axios.get(`http://localhost:9000/project/${id}`)
+        .then((res) => {
+          setTitle(res.data[0]?.title || '')
+          setDesc(res.data[0]?.description || '')
+        })
+        .catch(() => toast.error('Unable to load project details'))
+    } else if (!isModalOpen) {
+      setTitle('')
+      setDesc('')
     }
+  }, [edit, id, isModalOpen])
 
-    return (
-        <Transition appear show={isModalOpen} as={Fragment}>
-            <Dialog as='div' open={isModalOpen} onClose={() => closeModal()} className="relative z-50">
-                <div className="fixed inset-0 overflow-y-auto">
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <div className="fixed inset-0 bg-black/30" />
-                    </Transition.Child>
-                    <div className="fixed inset-0 flex items-center justify-center p-4 w-screen h-screen ">
-                        {/* <div className="fixed inset-0 "> */}
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300 "
-                            enterFrom="opacity-0 scale-95"
-                            enterTo="opacity-100 scale-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100 scale-100"
-                            leaveTo="opacity-0 scale-95"
-                        >
-                            <Dialog.Panel className="rounded-md bg-white w-6/12">
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
 
-                                <Dialog.Title as='div' className={'bg-white shadow px-6 py-4 rounded-t-md sticky top-0'}>
-                                    {edit ? (<h1>Edit Project</h1>) : (<h1>Create Project</h1>)}
-                                    <button onClick={() => closeModal()} className=' absolute right-6 top-4 text-gray-500 hover:bg-gray-100 rounded focus:outline-none focus:ring focus:ring-offset-1 focus:ring-indigo-200 '>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className=" w-6 h-6">
-                                            <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </Dialog.Title>
-                                <form onSubmit={handleSubmit} className='gap-4 px-8 py-4'>
-                                    <div className='mb-3'>
-                                        <label htmlFor="title" className='block text-gray-600'>Title</label>
-                                        <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" className='border border-gray-300 rounded-md w-full text-sm py-2 px-2.5 focus:border-indigo-500 focus:outline-offset-1 focus:outline-indigo-400' placeholder='Project title' />
-                                    </div>
-                                    <div className='mb-2'>
-                                        <label htmlFor="Description" className='block text-gray-600'>Description</label>
-                                        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className='border border-gray-300 rounded-md w-full text-sm py-2 px-2.5 focus:border-indigo-500 focus:outline-offset-1 focus:outline-indigo-400' rows="6" placeholder='Project description'></textarea>
-                                    </div>
-                                    <div className='flex justify-end items-center space-x-2'>
-                                        <BtnSecondary onClick={() => closeModal()}>Cancel</BtnSecondary>
-                                        <BtnPrimary>Save</BtnPrimary>
-                                    </div>
-                                </form>
+    if (!edit) {
+      axios.post('http://localhost:9000/project/', { title: title.trim(), description: desc.trim() })
+        .then((res) => {
+          closeModal()
+          document.dispatchEvent(new CustomEvent('projectUpdate', { detail: { ...res.data } }))
+          toast.success('Project created')
+          setTitle('')
+          setDesc('')
+        })
+        .catch((error) => {
+          if (error.response?.status === 422) {
+            toast.error(error.response.data?.details?.[0]?.message || 'Please check project details')
+          } else {
+            toast.error('Failed to create project')
+          }
+        })
+        .finally(() => setIsSubmitting(false))
+    } else {
+      axios.put(`http://localhost:9000/project/${id}`, { title: title.trim(), description: desc.trim() })
+        .then((res) => {
+          closeModal()
+          document.dispatchEvent(new CustomEvent('projectUpdate', { detail: { ...res.data } }))
+          toast.success('Project updated')
+          setTitle('')
+          setDesc('')
+        })
+        .catch((error) => {
+          if (error.response?.status === 422) {
+            toast.error(error.response.data?.details?.[0]?.message || 'Please check project details')
+          } else {
+            toast.error('Failed to update project')
+          }
+        })
+        .finally(() => setIsSubmitting(false))
+    }
+  }
 
-                            </Dialog.Panel>
-                        </Transition.Child>
+  return (
+    <Transition appear show={isModalOpen} as={Fragment}>
+      <Dialog as="div" open={isModalOpen} onClose={() => closeModal()} className="relative z-50">
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-150"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" />
+        </Transition.Child>
 
-                    </div>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-150"
+            enterFrom="opacity-0 scale-95"
+            enterTo="opacity-100 scale-100"
+            leave="ease-in duration-100"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-95"
+          >
+            <Dialog.Panel className="bg-white rounded-xl shadow-modal border border-slate-200 w-full max-w-lg overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <Dialog.Title as="h2" className="text-base font-semibold text-slate-900">
+                    {edit ? 'Edit Project' : 'Create Project'}
+                  </Dialog.Title>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {edit ? 'Update project settings and details.' : 'Create a new project workspace to organize your tasks.'}
+                  </p>
                 </div>
-            </Dialog>
-        </Transition>
-    )
+                <button
+                  onClick={() => closeModal()}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors focus:outline-none"
+                  aria-label="Close dialog"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="title" className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                      Project Name <span className="text-red-500">*</span>
+                    </label>
+                  </div>
+                  <input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    type="text"
+                    className="w-full border border-slate-300 rounded-lg text-sm py-2 px-3 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none transition-all placeholder:text-slate-400 bg-white"
+                    placeholder="e.g. Website Redesign"
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="description" className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                      Description
+                    </label>
+                    <span className="text-xs text-slate-400 font-normal bg-slate-100 px-2 py-0.5 rounded-full">
+                      Optional
+                    </span>
+                  </div>
+                  <textarea
+                    id="description"
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg text-sm py-2 px-3 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none transition-all placeholder:text-slate-400 bg-white resize-none"
+                    rows="4"
+                    placeholder="Brief summary or scope of this project (optional)..."
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                  <BtnSecondary type="button" onClick={() => closeModal()}>
+                    Cancel
+                  </BtnSecondary>
+                  <BtnPrimary type="submit" disabled={isSubmitting || !title.trim()}>
+                    {isSubmitting ? 'Saving...' : edit ? 'Save Changes' : 'Create Project'}
+                  </BtnPrimary>
+                </div>
+              </form>
+            </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
+  )
 }
 
 export default memo(AddProjectModal)

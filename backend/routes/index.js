@@ -29,11 +29,11 @@ api.post('/project', async (req, res) => {
     // validate type 
     const project = joi.object({
         title: joi.string().min(3).max(30).required(),
-        description: joi.string().required(),
+        description: joi.string().allow('', null).default('').optional(),
     })
 
     // validation
-    const { error, value } = project.validate({ title: req.body.title, description: req.body.description });
+    const { error, value } = project.validate({ title: req.body.title, description: req.body.description || '' });
     if (error) return res.status(422).send(error)
 
 
@@ -57,11 +57,11 @@ api.put('/project/:id', async (req, res) => {
     // validate type 
     const project = joi.object({
         title: joi.string().min(3).max(30).required(),
-        description: joi.string().required(),
+        description: joi.string().allow('', null).default('').optional(),
     })
 
     // // validation
-    const { error, value } = project.validate({ title: req.body.title, description: req.body.description });
+    const { error, value } = project.validate({ title: req.body.title, description: req.body.description || '' });
     if (error) return res.status(422).send(error)
 
     Project.updateOne({ _id: mongoose.Types.ObjectId(req.params.id) }, { ...value }, { upsert: true }, (error, data) => {
@@ -96,10 +96,10 @@ api.post('/project/:id/task', async (req, res) => {
     // validate type 
     const task = joi.object({
         title: joi.string().min(3).max(30).required(),
-        description: joi.string().required(),
+        description: joi.string().allow('', null).default('').optional(),
     })
 
-    const { error, value } = task.validate({ title: req.body.title, description: req.body.description });
+    const { error, value } = task.validate({ title: req.body.title, description: req.body.description || '' });
     if (error) return res.status(422).send(error)
 
     try {
@@ -157,10 +157,10 @@ api.put('/project/:id/task/:taskId', async (req, res) => {
 
     const task = joi.object({
         title: joi.string().min(3).max(30).required(),
-        description: joi.string().required(),
+        description: joi.string().allow('', null).default('').optional(),
     })
 
-    const { error, value } = task.validate({ title: req.body.title, description: req.body.description });
+    const { error, value } = task.validate({ title: req.body.title, description: req.body.description || '' });
     if (error) return res.status(422).send(error)
 
     try {
